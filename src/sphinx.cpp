@@ -11381,7 +11381,7 @@ public:
 	{
 		bool bInline = pIndex->m_tSettings.m_eDocinfo==SPH_DOCINFO_INLINE;
 
-		tQword.m_iInlineAttrs = bInline ? pIndex->m_tSchema.GetAttrsCount() : 0;
+		tQword.m_iInlineAttrs = bInline ? pIndex->m_tSchema.GetDynamicSize() : 0;
 		tQword.m_pInlineFixup = bInline ? pIndex->m_pMin->m_pDynamic : NULL;
 
 		tQword.m_rdHitlist.SetFile ( tHits );
