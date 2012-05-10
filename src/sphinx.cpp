@@ -2446,7 +2446,7 @@ bool CSphCharsetDefinitionParser::AddRange ( const CSphRemapRange & tRange, CSph
 	}
 
 	CSphString sError;
-	sError.SetSprintf ( "dest range (U+0x%x) below U+0x20, not allowed", tRange.m_iRemapStart );
+	sError.SetSprintf ( "dest range (U+%x) below U+20, not allowed", tRange.m_iRemapStart );
 	Error ( sError.cstr() );
 	return false;
 }
@@ -2779,6 +2779,38 @@ bool ISphTokenizer::SetCaseFolding ( const char * sConfig, CSphString & sError )
 	{
 		sError = tParser.GetLastError();
 		return false;
+	}
+
+	const int MIN_CODE = 0x21;
+	ARRAY_FOREACH ( i, dRemaps )
+	{
+		CSphRemapRange & tMap = dRemaps[i];
+
+		if ( tMap.m_iStart<MIN_CODE || tMap.m_iStart>=m_tLC.MAX_CODE )
+		{
+			sphWarning ( "wrong character mapping start specified: U+%x, should be between U+%x and U+%x (inclusive); CLAMPED", tMap.m_iStart, MIN_CODE, m_tLC.MAX_CODE-1 );
+			tMap.m_iStart = Min ( Max ( tMap.m_iStart, MIN_CODE ), m_tLC.MAX_CODE-1 );
+		}
+
+		if ( tMap.m_iEnd<MIN_CODE || tMap.m_iEnd>=m_tLC.MAX_CODE )
+		{
+			sphWarning ( "wrong character mapping end specified: U+%x, should be between U+%x and U+%x (inclusive); CLAMPED", tMap.m_iEnd, MIN_CODE, m_tLC.MAX_CODE-1 );
+			tMap.m_iEnd = Min ( Max ( tMap.m_iEnd, MIN_CODE ), m_tLC.MAX_CODE-1 );
+		}
+
+		if ( tMap.m_iRemapStart<MIN_CODE || tMap.m_iRemapStart>=m_tLC.MAX_CODE )
+		{
+			sphWarning ( "wrong character remapping start specified: U+%x, should be between U+%x and U+%x (inclusive); CLAMPED", tMap.m_iRemapStart, MIN_CODE, m_tLC.MAX_CODE-1 );
+			tMap.m_iRemapStart = Min ( Max ( tMap.m_iRemapStart, MIN_CODE ), m_tLC.MAX_CODE-1 );
+		}
+
+		int iRemapEnd = tMap.m_iRemapStart+tMap.m_iEnd-tMap.m_iStart;
+		if ( iRemapEnd<MIN_CODE || iRemapEnd>=m_tLC.MAX_CODE )
+		{
+			sphWarning ( "wrong character remapping end specified: U+%x, should be between U+%x and U+%x (inclusive); IGNORED", iRemapEnd, MIN_CODE, m_tLC.MAX_CODE-1 );
+			dRemaps.Remove(i);
+			i--;
+		}
 	}
 
 	m_tLC.Reset ();
