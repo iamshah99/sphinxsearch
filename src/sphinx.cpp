@@ -2085,6 +2085,7 @@ public:
 	virtual const CSphSavedFile &	GetSynFileInfo () const											{ return m_pTokenizer->GetSynFileInfo (); }
 	virtual bool					EnableSentenceIndexing ( CSphString & sError )					{ return m_pTokenizer->EnableSentenceIndexing ( sError ); }
 	virtual bool					EnableZoneIndexing ( CSphString & sError )						{ return m_pTokenizer->EnableZoneIndexing ( sError ); }
+	virtual int						SkipBlended ()													{ return m_pTokenizer->SkipBlended(); }
 
 public:
 	virtual void					SetBuffer ( BYTE * sBuffer, int iLength );
