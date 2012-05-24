@@ -14139,6 +14139,9 @@ bool CSphIndex_VLN::DoGetKeywords ( CSphVector <CSphKeywordInfo> & dKeywords, co
 			tInfo.m_iDocs = bGetStats ? QueryWord.m_iDocs : 0;
 			tInfo.m_iHits = bGetStats ? QueryWord.m_iHits : 0;
 			++nWords;
+
+			if ( tInfo.m_sNormalized.cstr()[0]==MAGIC_WORD_HEAD_NONSTEMMED )
+				*(char *)tInfo.m_sNormalized.cstr() = '=';
 		}
 	}
 
