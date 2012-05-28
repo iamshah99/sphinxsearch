@@ -22953,6 +22953,7 @@ bool CSphSource_XMLPipe2::ParseNextChunk ( int iBufferLen, CSphString & sError )
 				|| ( iBytes==3 && iVal<0x800 ) // and overlong 3-byte codes
 				|| ( iVal>=0xfff0 && iVal<=0xffff ) ) // and kinda-valid specials expat chokes on anyway
 			{
+				iBytes = i;
 				for ( i=0; i<iBytes; i++ )
 					p[i] = ' ';
 			}
