@@ -3593,7 +3593,7 @@ int CSphTokenizerTraits<IS_UTF8>::CodepointArbitration ( int iCode, bool bWasEsc
 	{
 		bool bBlend =
 			bWasEscaped || // escaped characters should always act as blended
-			( m_bPhrase && !sphIsModifier ( iSymbol ) ) || // non-modifier special inside phrase
+			( m_bPhrase && !sphIsModifier ( iSymbol ) && iSymbol!='"' ) || // non-modifier special inside phrase
 			( m_iAccum && ( iSymbol=='@' || iSymbol=='/' || iSymbol=='-' ) ); // some specials in the middle of a token
 
 		// clear special or blend flags
