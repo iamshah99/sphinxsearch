@@ -9607,11 +9607,12 @@ bool CSphIndex_VLN::LoadHitlessWords ()
 	if ( !tFile.Read ( &dBuffer[0], dBuffer.GetLength(), m_sLastError ) )
 		return false;
 
+	// FIXME!!! dict=keywords + hitless_words=some
 	m_pTokenizer->SetBuffer ( &dBuffer[0], dBuffer.GetLength() );
 	while ( BYTE * sToken = m_pTokenizer->GetToken() )
 		m_dHitlessWords.Add ( m_pDict->GetWordID ( sToken ) );
 
-	m_dHitlessWords.Sort();
+	m_dHitlessWords.Uniq();
 	return true;
 }
 
@@ -15158,6 +15159,7 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 	int iWordsTotal = 0;
 
 	char sWord[MAX_KEYWORD_BYTES], sLastWord[MAX_KEYWORD_BYTES];
+	memset ( sWord, 0, sizeof(sWord) );
 	memset ( sLastWord, 0, sizeof(sLastWord) );
 
 	const int iWordPerCP = m_uVersion>=21 ? SPH_WORDLIST_CHECKPOINT : 1024;
@@ -15459,6 +15461,10 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 		int iDoclistHits = 0;
 		int iHitlistHits = 0;
 
+		// FIXME!!! dict=keywords + hitless_words=some
+		bool bHitless = ( m_tSettings.m_eHitless==SPH_HITLESS_ALL ||
+			( m_tSettings.m_eHitless==SPH_HITLESS_SOME && m_dHitlessWords.BinarySearch ( uWordid ) ) );
+
 		for ( ;; )
 		{
 			const CSphMatch & tDoc = pQword->GetNextDoc ( pInlineStorage );
@@ -15534,12 +15540,12 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 			}
 
 			// check hit count
-			if ( iDocHits!=(int)pQword->m_uMatchHits )
+			if ( iDocHits!=(int)pQword->m_uMatchHits && !bHitless )
 				LOC_FAIL(( fp, "doc hit count mismatch (wordid="UINT64_FMT"(%s), docid="DOCID_FMT", doclist=%d, hitlist=%d)",
 					(uint64_t)uWordid, sWord, pQword->m_tDoc.m_iDocID, pQword->m_uMatchHits, iDocHits ));
 
 			// check the mask
-			if ( dFieldMask!=pQword->m_dQwordFields )
+			if ( dFieldMask!=pQword->m_dQwordFields && !bHitless )
 				LOC_FAIL(( fp, "field mask mismatch (wordid="UINT64_FMT"(%s), docid="DOCID_FMT")",
 					(uint64_t)uWordid, sWord, pQword->m_tDoc.m_iDocID ));
 
@@ -15552,7 +15558,7 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 			LOC_FAIL(( fp, "doc count mismatch (wordid="UINT64_FMT"(%s), dict=%d, doclist=%d)",
 				uint64_t(uWordid), sWord, iDictDocs, iDoclistDocs ));
 
-		if ( iDictHits!=iDoclistHits || iDictHits!=iHitlistHits )
+		if ( ( iDictHits!=iDoclistHits || iDictHits!=iHitlistHits ) && !bHitless )
 			LOC_FAIL(( fp, "hit count mismatch (wordid="UINT64_FMT"(%s), dict=%d, doclist=%d, hitlist=%d)",
 				uint64_t(uWordid), sWord, iDictHits, iDoclistHits, iHitlistHits ));
 
