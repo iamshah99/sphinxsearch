@@ -19814,6 +19814,7 @@ CSphSource_Document::CSphSource_Document ( const char * sName )
 	, m_iMaxFileBufferSize ( 2 * 1024 * 1024 )
 	, m_eOnFileFieldError ( FFE_IGNORE_FIELD )
 	, m_fpDumpRows ( NULL )
+	, m_iPlainFieldsLength ( 0 )
 	, m_iMaxHits ( MAX_SOURCE_HITS )
 {
 }
@@ -19828,7 +19829,7 @@ bool CSphSource_Document::IterateDocument ( CSphString & sError )
 	m_tHits.m_dData.Resize ( 0 );
 
 	m_tState = CSphBuildHitsState_t();
-	m_tState.m_iEndField = m_tSchema.m_iBaseFields ? m_tSchema.m_iBaseFields : m_tSchema.m_dFields.GetLength();
+	m_tState.m_iEndField = m_iPlainFieldsLength;
 
 	m_dMva.Resize ( 1 ); // must not have zero offset
 
@@ -20778,7 +20779,7 @@ bool CSphSource_SQL::IterateStart ( CSphString & sError )
 			sphWarn ( "attribute '%s' not found - IGNORING", m_tParams.m_dAttrs[i].m_sName.cstr() );
 
 	// joined fields
-	m_tSchema.m_iBaseFields = m_tSchema.m_dFields.GetLength();
+	m_iPlainFieldsLength = m_tSchema.m_dFields.GetLength();
 
 	CSphColumnInfo tCol;
 	tCol.m_iIndex = -1;
@@ -20921,7 +20922,7 @@ BYTE ** CSphSource_SQL::NextDocument ( CSphString & sError )
 		m_tDocInfo.m_pDynamic[i] = 0;
 
 	// split columns into fields and attrs
-	for ( int i=0; i<m_tSchema.m_iBaseFields; i++ )
+	for ( int i=0; i<m_iPlainFieldsLength; i++ )
 	{
 		// get that field
 		#if USE_ZLIB
@@ -21363,12 +21364,12 @@ ISphHits * CSphSource_SQL::IterateJoinedHits ( CSphString & sError )
 		} else
 		{
 			int iLastField = m_iJoinedHitField;
-			bool bRanged = ( m_iJoinedHitField>=m_tSchema.m_iBaseFields && m_iJoinedHitField<m_tSchema.m_dFields.GetLength()
+			bool bRanged = ( m_iJoinedHitField>=m_iPlainFieldsLength && m_iJoinedHitField<m_tSchema.m_dFields.GetLength()
 				&& m_tSchema.m_dFields[m_iJoinedHitField].m_eSrc==SPH_ATTRSRC_RANGEDQUERY );
 
 			// current field is over, continue to next field
 			if ( m_iJoinedHitField<0 )
-				m_iJoinedHitField = m_tSchema.m_iBaseFields;
+				m_iJoinedHitField = m_iPlainFieldsLength;
 			else if ( !bRanged || !bProcessingRanged )
 				m_iJoinedHitField++;
 
@@ -22299,7 +22300,7 @@ public:
 	virtual bool	Connect ( CSphString & sError );			///< run the command and open the pipe
 	virtual void	Disconnect ();								///< close the pipe
 
-	virtual bool	IterateStart ( CSphString & ) { return true; }	///< Connect() starts getting documents automatically, so this one is empty
+	virtual bool	IterateStart ( CSphString & ) { m_iPlainFieldsLength = m_tSchema.m_dFields.GetLength(); return true; }	///< Connect() starts getting documents automatically, so this one is empty
 	virtual BYTE **	NextDocument ( CSphString & sError );			///< parse incoming chunk and emit some hits
 
 	virtual bool	HasAttrsConfigured ()							{ return true; }	///< xmlpipe always has some attrs for now
