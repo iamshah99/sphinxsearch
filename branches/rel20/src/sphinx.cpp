@@ -23193,6 +23193,8 @@ void CSphSource_XMLPipe2::StartElement ( const char * szName, const char ** pAtt
 		{
 			sphWarn ( "%s", DecorateMessage ( "both embedded and configured schemas found; using embedded" ) );
 			m_tSchema.Reset ();
+			CSphMatch tDocInfo;
+			Swap ( m_tDocInfo, tDocInfo );
 		}
 
 		m_bFirstTagAfterDocset = false;
