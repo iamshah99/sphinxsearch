@@ -16735,6 +16735,7 @@ void CSphDictCRCTraits::ApplyStemmers ( BYTE * pWord )
 CSphDict * CSphDictCRCTraits::CloneBase ( CSphDictCRCTraits * pDict ) const
 {
 	assert ( pDict );
+	pDict->m_tSettings = m_tSettings;
 	pDict->m_iStopwords = m_iStopwords;
 	pDict->m_pStopwords = m_pStopwords;
 	pDict->m_pWordforms = m_pWordforms;
