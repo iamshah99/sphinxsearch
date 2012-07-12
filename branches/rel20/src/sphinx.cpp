@@ -137,6 +137,13 @@ static inline float logf ( float v )
 }
 #endif
 
+#if USE_WINDOWS
+void localtime_r ( const time_t * clock, struct tm * res )
+{
+	*res = *localtime ( clock );
+}
+#endif
+
 // forward decl
 void sphWarn ( const char * sTemplate, ... ) __attribute__ ( ( format ( printf, 1, 2 ) ) );
 size_t sphReadThrottled ( int iFD, void * pBuf, size_t iCount );
