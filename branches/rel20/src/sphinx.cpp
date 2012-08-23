@@ -13485,19 +13485,24 @@ bool CSphIndex_VLN::Prealloc ( bool bMlock, bool bStripPath, CSphString & sWarni
 		if ( tDocinfo.GetFD()<0 )
 			return false;
 
-		// min-max index 32 bit overflow fix-up
-		int64_t iMinMaxIndex = (int64_t)m_tStats.m_iTotalDocuments * iStride;
-		if ( iMinMaxIndex>m_uMinMaxIndex )
-		{
-			bool bClamp = ( (DWORD)iMinMaxIndex==m_uMinMaxIndex );
-			sphWarning ( "min-max offset clamped (stored=0x%llx, real=0x%llx)", m_uMinMaxIndex, iMinMaxIndex );
-			if ( bClamp )
-				m_uMinMaxIndex = iMinMaxIndex;
-		}
-
 		int64_t iDocinfoSize = tDocinfo.GetSize ( iEntrySize, true, m_sLastError ) / sizeof(DWORD);
 		if ( iDocinfoSize<0 )
 			return false;
+
+		// min-max index 32 bit overflow fix-up
+		if ( m_uMinMaxIndex && iDocinfoSize/sizeof(DWORD)>UINT_MAX )
+		{
+			int64_t uFixedMinMax = m_uMinMaxIndex + ( U64C(1)<<32 );
+			if ( uFixedMinMax<iDocinfoSize )
+			{
+				sphWarning ( "clamped min-max offset fixed (offset="INT64_FMT", fixed="UINT64_FMT")", m_uMinMaxIndex, uFixedMinMax );
+				m_uMinMaxIndex = uFixedMinMax;
+			} else
+			{
+				m_sLastError.SetSprintf ( "can't fix clamped min-max offset (offset="INT64_FMT", file size="UINT64_FMT")", m_uMinMaxIndex, iDocinfoSize );
+				return false;
+			}
+		}
 
 		int64_t iRealDocinfoSize = m_uMinMaxIndex ? m_uMinMaxIndex : iDocinfoSize;
 
